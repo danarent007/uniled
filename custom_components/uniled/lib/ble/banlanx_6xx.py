@@ -843,18 +843,32 @@ class SP6xxEProxy(UniledBleModel):
         self, device: BLEDevice, advertisement: AdvertisementData | None = None
     ) -> UniledBleModel | None:
         """Match to one of the SP6xxE devices"""
-        if not hasattr(advertisement, "manufacturer_data"):
-            return None
-        for mid, data in advertisement.manufacturer_data.items():
-            if mid != self.ble_manufacturer_id or data[1] != 0x10:
-                continue
-            for signature in MODEL_SIGNATURE_LIST:
-                for id, name in signature.ids.items():
-                    if id != data[0]:
-                        continue
-                    return BanlanX6xx(
-                        id=id, name=name, info=signature.info, conf=signature.conf
-                    )
+        # Try matching by manufacturer data first (most reliable)
+        if hasattr(advertisement, "manufacturer_data"):
+            for mid, data in advertisement.manufacturer_data.items():
+                if mid != self.ble_manufacturer_id or data[1] != 0x10:
+                    continue
+                for signature in MODEL_SIGNATURE_LIST:
+                    for id, name in signature.ids.items():
+                        if id != data[0]:
+                            continue
+                        return BanlanX6xx(
+                            id=id, name=name, info=signature.info, conf=signature.conf
+                        )
+
+        # Fallback: Match by service UUID
+        if hasattr(advertisement, "service_uuids"):
+            for service_uuid in BANLANX6XX_UUID_SERVICE:
+                if service_uuid in advertisement.service_uuids:
+                    # Try to match by device name
+                    if hasattr(device, "name") and device.name:
+                        for signature in MODEL_SIGNATURE_LIST:
+                            for id, name in signature.ids.items():
+                                if name == device.name:
+                                    return BanlanX6xx(
+                                        id=id, name=name, info=signature.info, conf=signature.conf
+                                    )
+
         return None
 
     def __init__(self, id: int, name: str, info: str):
