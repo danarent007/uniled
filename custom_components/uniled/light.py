@@ -20,7 +20,6 @@ from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_MODE,
     ATTR_COLOR_TEMP_KELVIN,
-    ATTR_COLOR_TEMP,
     ATTR_EFFECT,
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
@@ -34,6 +33,12 @@ from homeassistant.components.light import (
     ColorMode,
     color_supported,
 )
+
+# ATTR_COLOR_TEMP was removed in newer HA versions, fallback to the attribute name string
+try:
+    from homeassistant.components.light import ATTR_COLOR_TEMP
+except ImportError:
+    ATTR_COLOR_TEMP = "color_temp"
 
 from .entity import (
     UniledUpdateCoordinator,
